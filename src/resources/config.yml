@@ -1,0 +1,6 @@
+#don't touch this
+version: 1.0
+#enable debug mode
+#this will output Logger messages to console
+#useful, obviously, for debugging and finding issues
+enable-debug-mode: false
