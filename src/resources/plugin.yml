@@ -1,0 +1,40 @@
+name: IngotMinigamesAPI
+authors:
+- Budderman18
+description: "An API designed for make minigame-based plugins easy to work with"
+main: com.budderman18.IngotMinigamesAPI.Main
+version: 1.0
+api-version: 1.13
+commands:
+    IMAPI:
+        description: Access IngotMinigamesAPI commands
+        default: op
+        usage: /IMAPI [command]
+        aliases:
+        - IngotMinigamesAPI
+        permission: IngotMinigamesAPI.IMAPI
+permissions:
+    IngotMinigamesAPI.IMAPI:
+        description: gives access to base /IMAPI command
+        default: op
+    IngotMinigamesAPI.IMAPI.config:
+        description: gives access to /IMAPI config command
+        default: op
+    IngotMinigamesAPI.IMAPI.help:
+        description: gives access to /IMAPI help command
+        default: op
+    IngotMinigamesAPI.IMAPI.reload:
+        description: gives access to /IMAPI reload command
+        default: op
+    IngotMinigamesAPI.IMAPI.version:
+        description: gives access to /IMAPI version command
+        default: op
+    IngotMinigamesAPI.IMAPI.*:
+        description: gives access to all /IMAPI commands
+        default: op
+        children:
+        - IngotMinigamesAPI.IMAPI
+        - IngotMinigamesAPI.config
+        - IngotMinigamesAPI.help
+        - IngotMinigamesAPI.reload
+        - IngotMinigamesAPI.version
