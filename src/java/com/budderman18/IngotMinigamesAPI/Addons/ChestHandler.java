@@ -8,6 +8,8 @@ import com.budderman18.IngotMinigamesAPI.Main;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.FireworkEffect;
@@ -36,6 +38,8 @@ import org.bukkit.util.Vector;
  * 
  */
 public class ChestHandler {
+    //global vars
+    private static List<Chest> activeAnimations = new ArrayList<>();
     /**
      * 
      * This method obtains all chests and both stores them and returns them
@@ -301,125 +305,149 @@ public class ChestHandler {
             }
         }
     }
+    /**
+     * 
+     * This method gets a list of all chests being animated
+     * 
+     * @return the chest list
+     */
+    public static List<Chest> getCurrentlyAnimatingChests() {
+        return activeAnimations;
+    }
+    /**
+     * 
+     * This method cancels an ongoing animation
+     * 
+     * @param chestToCancel the chest you want to stop
+     */
+    public static void cancelAnimation(Chest chestToCancel) {
+        activeAnimations.remove(chestToCancel);
+    }
     //use for the runnable (needed bc of stupid runnable limitations. Seriously why tf cant we use fields and vars that arent final?)
     private static Runnable getAction(Location chest, Zombie entityy, Horse riderr, Block[] blocks, BlockData[] data, short y, final byte fireworkIndex, FallingBlock blockk, ChestAnimation animation, Chest realChest, FileConfiguration chestconfig) {
         //local vars
         final List<Chest> chests = new ArrayList<>();
+        byte i = 0;
         //check if skyfall animation
-        if (animation == ChestAnimation.SKYFALL) {
-            return () -> {
-                //runnable vars
-                String itemname = "";
-                FallingBlock block = null;
-                Chest tempChest = null;
-                //check if entity is alive
-                if (entityy.isDead() == false) {
-                    //move entity
-                    entityy.setVelocity(new Vector(0,-0.015,0.6));
-                    //check if at drop location
-                    if (entityy.getLocation().getBlockZ() == chest.getBlockZ() && block == null) {
-                        //spawn block
-                        block = (FallingBlock) entityy.getWorld().spawnFallingBlock(entityy.getLocation(), Material.getMaterial(Material.OAK_LOG.toString()).createBlockData());
-                        //centerize locations
-                        block.getLocation().setX(block.getLocation().getX() + 0.5);
-                        block.getLocation().setZ(block.getLocation().getZ() + 0.5);
-                        realChest.getLocation().setX(block.getLocation().getX() + 0.5);
-                        realChest.getLocation().setZ(block.getLocation().getZ() + 0.5);
-                    }
-                    //check if entity is ready to die
-                    else if (entityy.getLocation().getBlockZ() >= chest.getBlockZ()+20) {
-                        //kill entity
-                        entityy.remove();
-                        block = null;
-                        //spawn explotion particles/sound
-                        realChest.getWorld().spawnParticle(Particle.EXPLOSION_HUGE, chest, 25);
-                        realChest.getWorld().playSound(chest, Sound.ENTITY_GENERIC_EXPLODE, 10, 1);
-                        //set block info
-                        chest.getBlock().setType(realChest.getType());
-                        chest.getBlock().setBlockData(realChest.getBlockData());
-                        //obtain chest
-                        tempChest = (Chest) chest.getBlock().getState();
-                        chests.add(tempChest);
-                        //first reset the chest to allow proper filling
-                        resetChests(chests, chestconfig);
-                        //get material
-                        itemname = chestconfig.getString("SUPPLY_DROP.material").toUpperCase();
-                        //check if item is null or empty
-                        if (itemname == null || itemname == "") {
-                            //use default (black wool)
-                            itemname = "BLACK_WOOL";
+        if (activeAnimations.contains(realChest)) {
+            if (animation == ChestAnimation.SKYFALL) {
+                return () -> {
+                    //runnable vars
+                    String itemname = "";
+                    FallingBlock block = null;
+                    Chest tempChest = null;
+                    //check if entity is alive
+                    if (entityy.isDead() == false) {
+                        //move entity
+                        entityy.setVelocity(new Vector(0,-0.015,0.6));
+                        //check if at drop location
+                        if (entityy.getLocation().getBlockZ() == chest.getBlockZ() && block == null) {
+                            //spawn block
+                            block = (FallingBlock) entityy.getWorld().spawnFallingBlock(entityy.getLocation(), Material.getMaterial(Material.OAK_LOG.toString()).createBlockData());
+                            //centerize locations
+                            block.getLocation().setX(block.getLocation().getX() + 0.5);
+                            block.getLocation().setZ(block.getLocation().getZ() + 0.5);
+                            realChest.getLocation().setX(block.getLocation().getX() + 0.5);
+                            realChest.getLocation().setZ(block.getLocation().getZ() + 0.5);
                         }
-                        //add item and fill chests
-                        tempChest.getBlockInventory().setItem(0, new ItemStack(Material.getMaterial(itemname)));
-                        fillChests(chests, chestconfig);
-                    }
-                    //run again
-                    TimerHandler.runTimer(Main.getInstance(), 0, 2, getAction(chest, entityy, riderr, blocks, data, y, fireworkIndex, null, animation, realChest, chestconfig), true, false);
-                }
-            };
-        }
-        //check if using delivery
-        if (animation == ChestAnimation.DELIVERY) {
-            return () -> {
-                //runnable vars
-                Chest tempChest = null;
-                String itemname = "";
-                //check if entity is alive
-                if (entityy.isDead() == false) {
-                    //check if entity needs to jump
-                    if (riderr.getLocation().getBlockY() < chest.getBlockY()) {
-                        //raise elevation
-                        riderr.setVelocity(new Vector(0,0.4,0.8));
+                        //check if entity is ready to die
+                        else if (entityy.getLocation().getBlockZ() >= chest.getBlockZ()+20) {
+                            //kill entity
+                            entityy.remove();
+                            block = null;
+                            //spawn explotion particles/sound
+                            realChest.getWorld().spawnParticle(Particle.EXPLOSION_HUGE, chest, 25);
+                            realChest.getWorld().playSound(chest, Sound.ENTITY_GENERIC_EXPLODE, 10, 1);
+                            //set block info
+                            chest.getBlock().setType(realChest.getType());
+                            chest.getBlock().setBlockData(realChest.getBlockData());
+                            //obtain chest
+                            tempChest = (Chest) chest.getBlock().getState();
+                            chests.add(tempChest);
+                            //first reset the chest to allow proper filling
+                            resetChests(chests, chestconfig);
+                            //get material
+                            itemname = chestconfig.getString("SUPPLY_DROP.material").toUpperCase();
+                            //check if item is null or empty
+                            if (itemname == null || itemname == "") {
+                                //use default (black wool)
+                                itemname = "BLACK_WOOL";
+                            }
+                            //add item and fill chests
+                            tempChest.getBlockInventory().setItem(0, new ItemStack(Material.getMaterial(itemname)));
+                            fillChests(chests, chestconfig);
+                        }
+                        //run again
+                        TimerHandler.runTimer(Main.getInstance(), 0, 2, getAction(chest, entityy, riderr, blocks, data, y, fireworkIndex, block, animation, realChest, chestconfig), true, false);
                     }
                     else {
-                        //lower elevation
-                        riderr.setVelocity(new Vector(0,-0.8,0.8));
+                        activeAnimations.remove(realChest);
                     }
-                    //check if at delivery spot
-                    if (entityy.getLocation().getBlockZ() == chest.getBlockZ()) {
-                        //set block
-                        chest.getBlock().setType(Material.CHEST);
-                    }
-                    //check if ready to die
-                    else if (entityy.getLocation().getBlockZ() >= chest.getBlockZ()+20) {
-                        //remove entities
-                        riderr.remove();
-                        entityy.remove();
-                        //set chest if it somehow didnt set
-                        chest.getBlock().setType(Material.CHEST);
-                        //obtain and add chest
-                        tempChest = (Chest) chest.getBlock().getState();
-                        chests.add(tempChest);
-                        //reset chest
-                        resetChests(chests, chestconfig);
-                        //get material
-                        itemname = chestconfig.getString("SUPPLY_DROP.material").toUpperCase();
-                        //check if item is null or empty
-                        if (itemname == null || itemname == "") {
-                            //use default (black wool)
-                            itemname = "BLACK_WOOL";
+                };
+            }
+            //check if using delivery
+            if (animation == ChestAnimation.DELIVERY) {
+                return () -> {
+                    //runnable vars
+                    Chest tempChest = null;
+                    String itemname = "";
+                    //check if entity is alive
+                    if (entityy.isDead() == false) {
+                        //check if entity needs to jump
+                        if (riderr.getLocation().getBlockY() < chest.getBlockY()) {
+                            //raise elevation
+                            riderr.setVelocity(new Vector(0,0.4,0.8));
                         }
-                        //add item and fill chest
-                        tempChest.getBlockInventory().setItem(0, new ItemStack(Material.getMaterial(itemname)));
-                        fillChests(chests, chestconfig);
+                        else {
+                            //lower elevation
+                            riderr.setVelocity(new Vector(0,-0.8,0.8));
+                        }
+                        //check if at delivery spot
+                        if (entityy.getLocation().getBlockZ() == chest.getBlockZ()) {
+                            //set block
+                            chest.getBlock().setType(Material.CHEST);
+                        }
+                        //check if ready to die
+                        else if (entityy.getLocation().getBlockZ() >= chest.getBlockZ()+20) {
+                            //remove entities
+                            riderr.remove();
+                            entityy.remove();
+                            //set chest if it somehow didnt set
+                            chest.getBlock().setType(Material.CHEST);
+                            //obtain and add chest
+                            tempChest = (Chest) chest.getBlock().getState();
+                            chests.add(tempChest);
+                            //reset chest
+                            resetChests(chests, chestconfig);
+                            //get material
+                            itemname = chestconfig.getString("SUPPLY_DROP.material").toUpperCase();
+                            //check if item is null or empty
+                            if (itemname == null || itemname == "") {
+                                //use default (black wool)
+                                itemname = "BLACK_WOOL";
+                            }
+                            //add item and fill chest
+                            tempChest.getBlockInventory().setItem(0, new ItemStack(Material.getMaterial(itemname)));
+                            fillChests(chests, chestconfig);
+                        }
+                        //run again
+                        TimerHandler.runTimer(Main.getInstance(), 0, 2, getAction(chest, entityy, riderr, blocks, data, y, fireworkIndex, null, animation, realChest, chestconfig), true, false);
+                    } 
+                    else {
+                        activeAnimations.remove(realChest);
                     }
-                    //run again
-                    TimerHandler.runTimer(Main.getInstance(), 0, 2, getAction(chest, entityy, riderr, blocks, data, y, fireworkIndex, null, animation, realChest, chestconfig), true, false);
-                }
-            };
-        }
-        //check if using beacon
-        if (animation == ChestAnimation.BEACON) {
-            return () -> {
-                //runnable vars
-                String itemname = "";
-                byte index = 0;
-                short trueY = y;
-                Firework firework = null;
-                FireworkMeta fmeta = null;
-                Chest tempChest = null;
-                //check if the chest is a beacon
-                if (chest.getBlock().getType() == Material.BEACON) {
+                };
+            }
+            //check if using beacon
+            if (animation == ChestAnimation.BEACON) {
+                return () -> {
+                    //runnable vars
+                    String itemname = "";
+                    byte index = 0;
+                    short trueY = y;
+                    Firework firework = null;
+                    FireworkMeta fmeta = null;
+                    Chest tempChest = null;
                     //check for western firework
                     if (fireworkIndex == 2 || fireworkIndex == 10) {
                         //spawn firework and get data
@@ -469,7 +497,7 @@ public class ChestHandler {
                         //set to air
                         chest.getWorld().getBlockAt(chest.getBlockX(), chest.getBlockY() + trueY, chest.getBlockZ()).setType(Material.AIR);
                         //bump chest down 2 blocks
-                        trueY-=2;
+                        trueY -= 2;
                         chest.getWorld().getBlockAt(chest.getBlockX(), chest.getBlockY() + trueY, chest.getBlockZ()).setType(Material.CHEST);
                         //spawn explosion particle and sound
                         chest.getWorld().spawnParticle(Particle.EXPLOSION_NORMAL, new Location(chest.getWorld(), chest.getBlockX(), chest.getBlockY() + trueY, chest.getBlockZ()), 25);
@@ -481,17 +509,17 @@ public class ChestHandler {
                         chest.getWorld().spawnParticle(Particle.EXPLOSION_HUGE, new Location(chest.getWorld(), chest.getBlockX(), chest.getBlockY(), chest.getBlockZ()), 25);
                         chest.getWorld().playSound(new Location(chest.getWorld(), chest.getBlockX(), chest.getBlockY() + trueY, chest.getBlockZ()), Sound.ENTITY_GENERIC_EXPLODE, 10, 1);
                         //get beacon x poses
-                        for (int x=chest.getBlockX()-1; x < chest.getBlockX()+2; x++) {
+                        for (int x = chest.getBlockX() - 1; x < chest.getBlockX() + 2; x++) {
                             //get beacon z poses
-                            for (int z=chest.getBlockZ() - 1; z < chest.getBlockZ() + 2; z++) {
+                            for (int z = chest.getBlockZ() - 1; z < chest.getBlockZ() + 2; z++) {
                                 //reset blocks
-                                chest.getWorld().getBlockAt(x,chest.getBlockY() - 1,z).setType(blocks[index].getType());
-                                chest.getWorld().getBlockAt(x,chest.getBlockY() - 1,z).setBlockData(data[index]);
+                                chest.getWorld().getBlockAt(x, chest.getBlockY() - 1, z).setType(blocks[index].getType());
+                                chest.getWorld().getBlockAt(x, chest.getBlockY() - 1, z).setBlockData(data[index]);
                                 index++;
                             }
                         }
                         //set back to chest
-                        chest.getBlock().setType(Material.CHEST);
+                        chest.getWorld().getBlockAt(chest).setType(Material.CHEST);
                         //obtain chest
                         tempChest = (Chest) chest.getBlock().getState();
                         chests.add(tempChest);
@@ -507,104 +535,178 @@ public class ChestHandler {
                         //add item and fill chests
                         tempChest.getBlockInventory().setItem(0, new ItemStack(Material.getMaterial(itemname)));
                         fillChests(chests, chestconfig);
+                        activeAnimations.remove(realChest);
                     }
                     //run again
-                    TimerHandler.runTimer(Main.getInstance(), 0, 5, getAction(chest, entityy, riderr, blocks, data, trueY, (byte) (fireworkIndex+1), null, animation, realChest, chestconfig), true, false);
-                }
-            };
-        }
-        //check if using drill
-        if (animation == ChestAnimation.DRILL) {
-            return () -> { 
-                //runnable vars
-                String itemname = "";
-                Chest tempChest = null;
-                FallingBlock block = blockk;
-                //check if just started
-                if (fireworkIndex == 0) {
-                    //set location
-                    chest.setY(chest.getBlockY()-16);
-                    //spawn particles and play sound
-                    chest.getWorld().spawnParticle(Particle.EXPLOSION_NORMAL, chest, y);
-                    chest.getWorld().playSound(chest, Sound.ENTITY_GENERIC_EXPLODE, 10, 1);
-                }
-                //check if at 7 time
-                if (fireworkIndex == 7) {
-                    //set location
-                    chest.setY(chest.getBlockY()+8);
-                    //spawn particles and play sound
-                    chest.getWorld().spawnParticle(Particle.EXPLOSION_NORMAL, chest, y);
-                    chest.getWorld().playSound(chest, Sound.ENTITY_GENERIC_EXPLODE, 10, 1);
-                }
-                //check at 13 time
-                if (fireworkIndex == 13) {
-                    //set location
-                    chest.setY(chest.getBlockY()+4);
-                    //spawn particles and play sound
-                    chest.getWorld().spawnParticle(Particle.EXPLOSION_NORMAL, chest, y);
-                    chest.getWorld().playSound(chest, Sound.ENTITY_GENERIC_EXPLODE, 10, 1);
-                }
-                //check at 15 time
-                if (fireworkIndex == 15) {
-                    //set location
-                    chest.setY(chest.getBlockY()+2);
-                    //spawn particles and play sound
-                    chest.getWorld().spawnParticle(Particle.EXPLOSION_NORMAL, chest, y);
-                    chest.getWorld().playSound(chest, Sound.ENTITY_GENERIC_EXPLODE, 10, 1);
-                }
-                //checkat 16 time
-                if (fireworkIndex == 16) {
-                    //set location
-                    chest.setY(chest.getBlockY()+1);
-                    //spawn particles and play sound
-                    chest.getWorld().spawnParticle(Particle.EXPLOSION_NORMAL, chest, y);
-                    chest.getWorld().playSound(chest, Sound.ENTITY_GENERIC_EXPLODE, 10, 1);
-                }
-                //check if emerged
-                if (fireworkIndex >= 16) {
-                    //check if block spawned
-                    if (block == null) {
-                        //spawn block and shoot up
-                        block = (FallingBlock) chest.getWorld().spawnFallingBlock(chest.add(0.5, 0, 0.5), Material.getMaterial(Material.OAK_LOG.toString()).createBlockData());
-                        block.setVelocity(new Vector(0,1,0));
-                    }
-                    //check if block is dead
-                    if (block.isDead()) {
-                        //set chest  and location location
-                        chest.add(0, 1, 0);
-                        chest.getBlock().setType(Material.CHEST);
-                        //get and add chest 
-                        tempChest = (Chest) chest.getBlock().getState();
-                        chests.add(tempChest);
-                        //reset chest
-                        resetChests(chests, chestconfig);
-                        //get material
-                        itemname = chestconfig.getString("SUPPLY_DROP.material").toUpperCase();
-                        //check if item is null or empty
-                        if (itemname == null || itemname == "") {
-                            //use default (black wool)
-                            itemname = "BLACK_WOOL";
-                        }
-                        //add item and fill chest
-                        tempChest.getBlockInventory().setItem(0, new ItemStack(Material.getMaterial(itemname)));
-                        fillChests(chests, chestconfig);
+                    TimerHandler.runTimer(Main.getInstance(), 0, 5, getAction(chest, entityy, riderr, blocks, data, trueY, (byte) (fireworkIndex + 1), null, animation, realChest, chestconfig), true, false);
+                };
+            }
+            //check if using drill
+            if (animation == ChestAnimation.DRILL) {
+                return () -> { 
+                    //runnable vars
+                    String itemname = "";
+                    Chest tempChest = null;
+                    FallingBlock block = blockk;
+                    //check if just started
+                    if (fireworkIndex == 0) {
+                        //set location
+                        chest.setY(chest.getBlockY()-16);
                         //spawn particles and play sound
-                        chest.getWorld().spawnParticle(Particle.EXPLOSION_LARGE, chest, y);
+                        chest.getWorld().spawnParticle(Particle.EXPLOSION_NORMAL, chest, y);
                         chest.getWorld().playSound(chest, Sound.ENTITY_GENERIC_EXPLODE, 10, 1);
                     }
-                }
-                //check if block is not null
-                if (block != null) {
-                    //run agaon if not dead
-                    if (!block.isDead()) {
+                    //check if at 7 time
+                    if (fireworkIndex == 7) {
+                        //set location
+                        chest.setY(chest.getBlockY()+8);
+                        //spawn particles and play sound
+                        chest.getWorld().spawnParticle(Particle.EXPLOSION_NORMAL, chest, y);
+                        chest.getWorld().playSound(chest, Sound.ENTITY_GENERIC_EXPLODE, 10, 1);
+                    }
+                    //check at 13 time
+                    if (fireworkIndex == 13) {
+                        //set location
+                        chest.setY(chest.getBlockY()+4);
+                        //spawn particles and play sound
+                        chest.getWorld().spawnParticle(Particle.EXPLOSION_NORMAL, chest, y);
+                        chest.getWorld().playSound(chest, Sound.ENTITY_GENERIC_EXPLODE, 10, 1);
+                    }
+                    //check at 15 time
+                    if (fireworkIndex == 15) {
+                        //set location
+                        chest.setY(chest.getBlockY()+2);
+                        //spawn particles and play sound
+                        chest.getWorld().spawnParticle(Particle.EXPLOSION_NORMAL, chest, y);
+                        chest.getWorld().playSound(chest, Sound.ENTITY_GENERIC_EXPLODE, 10, 1);
+                    }
+                    //checkat 16 time
+                    if (fireworkIndex == 16) {
+                        //set location
+                        chest.setY(chest.getBlockY()+1);
+                        //spawn particles and play sound
+                        chest.getWorld().spawnParticle(Particle.EXPLOSION_NORMAL, chest, y);
+                        chest.getWorld().playSound(chest, Sound.ENTITY_GENERIC_EXPLODE, 10, 1);
+                    }
+                    //check if emerged
+                    if (fireworkIndex >= 16) {
+                        //check if block spawned
+                        if (block == null) {
+                            //spawn block and shoot up
+                            block = (FallingBlock) chest.getWorld().spawnFallingBlock(chest.add(0.5, 0, 0.5), Material.getMaterial(Material.OAK_LOG.toString()).createBlockData());
+                            block.setVelocity(new Vector(0,1,0));
+                        }
+                        //check if block is dead
+                        if (block.isDead()) {
+                            //set chest  and location location
+                            chest.add(0, 1, 0);
+                            chest.getBlock().setType(Material.CHEST);
+                            //get and add chest 
+                            tempChest = (Chest) chest.getBlock().getState();
+                            chests.add(tempChest);
+                            //reset chest
+                            resetChests(chests, chestconfig);
+                            //get material
+                            itemname = chestconfig.getString("SUPPLY_DROP.material").toUpperCase();
+                            //check if item is null or empty
+                            if (itemname == null || itemname == "") {
+                                //use default (black wool)
+                                itemname = "BLACK_WOOL";
+                            }
+                            //add item and fill chest
+                            tempChest.getBlockInventory().setItem(0, new ItemStack(Material.getMaterial(itemname)));
+                            fillChests(chests, chestconfig);
+                            //spawn particles and play sound
+                            chest.getWorld().spawnParticle(Particle.EXPLOSION_LARGE, chest, y);
+                            chest.getWorld().playSound(chest, Sound.ENTITY_GENERIC_EXPLODE, 10, 1);
+                        }
+                    }
+                    //check if block is not null
+                    if (block != null) {
+                        //run agaon if not dead
+                        if (!block.isDead()) {
+                            TimerHandler.runTimer(Main.getInstance(), 0, 3, getAction(chest, entityy, riderr, blocks, data, y, (byte) (fireworkIndex+1), block, animation, realChest, chestconfig), true, false);
+                        }
+                        else {
+                            activeAnimations.remove(realChest);
+                        }
+                    }
+                    else {
+                        //run again
                         TimerHandler.runTimer(Main.getInstance(), 0, 3, getAction(chest, entityy, riderr, blocks, data, y, (byte) (fireworkIndex+1), block, animation, realChest, chestconfig), true, false);
                     }
+                };
+            }
+        }
+        //run if cancelled
+        else {
+            //check for skyfall
+            if (animation == ChestAnimation.SKYFALL) {
+                //kill entities
+                //check if entityy isnt null
+                if (entityy != null) {
+                    entityy.remove();
                 }
-                else {
-                    //run again
-                    TimerHandler.runTimer(Main.getInstance(), 0, 3, getAction(chest, entityy, riderr, blocks, data, y, (byte) (fireworkIndex+1), block, animation, realChest, chestconfig), true, false);
+                //check if blockk isnt null
+                if (blockk != null) {
+                    blockk.remove();
                 }
-            };
+                //set to chest
+                chest.getBlock().setType(Material.CHEST);
+            }
+            //check for delivery
+            else if (animation == ChestAnimation.DELIVERY) {
+                //kill entites
+                //check if entityy isnt null
+                if (entityy != null) {
+                    entityy.remove();
+                }
+                //check if riderr isnt null
+                if (riderr != null) {
+                    riderr.remove();
+                }
+                //set to chest
+                chest.getBlock().setType(Material.CHEST);
+            }
+            //check for beacon
+            else if (animation == ChestAnimation.BEACON) {
+                //set falling chest to air
+                chest.getWorld().getBlockAt(chest.getBlockX(), chest.getBlockY() + y, chest.getBlockZ()).setType(Material.AIR);                            
+                //check for valid block array
+                try {
+                    //get beacon x poses
+                    for (int x = chest.getBlockX() - 1; x < chest.getBlockX() + 2; x++) {
+                        //get beacon z poses
+                        for (int z = chest.getBlockZ() - 1; z < chest.getBlockZ() + 2; z++) {
+                            //check if block isnt null
+                            if (blocks[i] != null) {
+                                //reset blocks
+                                chest.getWorld().getBlockAt(x, chest.getBlockY() - 1, z).setType(blocks[i].getType());
+                                chest.getWorld().getBlockAt(x, chest.getBlockY() - 1, z).setBlockData(data[i]);
+                                i++;
+                            }
+                        }
+                    }
+                }
+                catch (IndexOutOfBoundsException ex) {
+                    //check for debug mode
+                    if (FileManager.getCustomData(Main.getInstance(), "config", "").getBoolean("enablke-debug-mode") == true) {
+                        ex.printStackTrace();
+                    }
+                }
+                //set back to chest
+                chest.getWorld().getBlockAt(chest).setType(Material.CHEST);
+            }
+            //check for drill
+            else if (animation == ChestAnimation.DRILL) {
+                //check if block is removeable
+                if (blockk != null) {
+                    //remove falling block
+                    blockk.remove();
+                }
+                //set to chest
+                realChest.setType(Material.CHEST);
+            }
         }
         return null;
     }
@@ -630,6 +732,8 @@ public class ChestHandler {
         byte index = 0;
         //set to chest if not already
         chest.getWorld().getBlockAt(chest).setType(Material.CHEST);
+        //add to animation list
+        activeAnimations.add((Chest) chest.getBlock().getState());
         //check if using skyfall
         if (animation == ChestAnimation.SKYFALL) {
             //spawn and setup player
@@ -699,7 +803,7 @@ public class ChestHandler {
                     blocks[index] = chest.getWorld().getBlockAt(x, chest.getBlockY()-1, z);
                     data[index] = blocks[index].getBlockData();
                     //set block
-                    blocks[index].setType(Material.DIAMOND_BLOCK);
+                    chest.getWorld().getBlockAt(x, chest.getBlockY()-1, z).setType(Material.DIAMOND_BLOCK);
                     index++;
                 }
             }
