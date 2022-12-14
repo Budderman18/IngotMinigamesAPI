@@ -2,7 +2,6 @@ package com.budderman18.IngotMinigamesAPI.Core.Handlers;
 
 import com.budderman18.IngotMinigamesAPI.Core.Data.Arena;
 import com.budderman18.IngotMinigamesAPI.Core.Data.IngotPlayer;
-import com.budderman18.IngotMinigamesAPI.Main;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -14,8 +13,6 @@ import org.bukkit.plugin.Plugin;
  * 
  */
 public class ChatHandler {
-    //plugin
-    private static final Plugin plugin = Main.getInstance();
     /**
      * 
      * This constructor blocks new() usage as it does nothing
@@ -71,8 +68,9 @@ public class ChatHandler {
      * @param inGameOnly true for inGAme users only
      * @param certainArena true to send in the same arena
      * @param arena the arena object to use
+     * @param plugin the plugin to send messages to
      */
-    public static void sendMessageToAll(String message, boolean inGameOnly, boolean certainArena, Arena arena) {
+    public static void sendMessageToAll(String message, boolean inGameOnly, boolean certainArena, Arena arena, Plugin plugin) {
         //Ingot Player
         IngotPlayer currentIPlayer = null;
         //color support
