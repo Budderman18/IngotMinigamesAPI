@@ -89,8 +89,8 @@ public class FakePlayer extends EntityPlayer {
      * convertToBukkitEntity(createNPC()) should actually be the only line you'll ever need to use
      * for this class, but others do exist if needed.
      * 
-     * @param player
-     * @return 
+     * @param player the fakeplayer to convert
+     * @return the HumanEntity equivelent
      */
     public static HumanEntity convertToBukkitEntity(FakePlayer player) {
         HumanEntity entity = null;
