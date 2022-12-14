@@ -47,13 +47,13 @@ public class TimerHandler {
             multiplier = 1;
         }
         //check if not using async
-        if (async == false) {
+        if (async == false && actionn != null) {
             //run timer
             taskNumber = schedule.scheduleSyncDelayedTask(pluginn, () -> {
                 actionn.run();
             }, endVar * multiplier);
         }
-        else {
+        else if (actionn != null) {
             //run async timer
             taskNumber = schedule.scheduleAsyncDelayedTask(pluginn, () -> {
                 actionn.run();
