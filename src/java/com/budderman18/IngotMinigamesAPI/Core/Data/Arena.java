@@ -1146,14 +1146,14 @@ public class Arena {
     }
     /**
      *
-     * This method checks if a given player is inside the arena. 
+     * This method checks if a given location is inside the arena. 
      *
-     * @param player The player to check
+     * @param loc the location to check
      * @return true if player is in the arena
      */
-    public boolean isInArena(Player player) {
+    public boolean isInArena(Location loc) {
         //check if in arena
-        return !(player.getLocation().getX() < this.pos1[0] || player.getLocation().getX() > this.pos2[0] || player.getLocation().getY() < this.pos1[1] || player.getLocation().getY() > this.pos2[1] || player.getLocation().getZ() < this.pos1[2] || player.getLocation().getZ() > this.pos2[2]); //return if all checks fail
+        return !(loc.getX() < this.pos1[0] || loc.getX() > this.pos2[0] || loc.getY() < this.pos1[1] || loc.getY() > this.pos2[1] || loc.getZ() < this.pos1[2] || loc.getZ() > this.pos2[2]); 
     }
     /**
      *
@@ -1163,7 +1163,7 @@ public class Arena {
      *
      * @param loc the position array to centerize
      * @param affectRotation true if rotation should be checked
-     * @return
+     * @return the new location
      */
     public float[] centerizeLocation(double[] loc, boolean affectRotation) {
         //local vars
@@ -1552,9 +1552,9 @@ public class Arena {
     }
     /**
      *
-     * This method sets the pos1 of the current arena.
+     * This method sets the pos2 of the current arena.
      *
-     * @param poss2
+     * @param poss2 the position array to set
      */
     public void setPos2(int[] poss2) {
         //set instance list
